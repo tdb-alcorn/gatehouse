@@ -1,0 +1,73 @@
+{
+  "name": "gatehouse",
+  "version": "0.1.0",
+  "description": "Drop-in RBAC for Next.js. 5 lines to working permissions.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js"
+    },
+    "./next": {
+      "types": "./dist/next.d.ts",
+      "import": "./dist/next.js"
+    },
+    "./adapters/clerk": {
+      "types": "./dist/adapters/clerk.d.ts",
+      "import": "./dist/adapters/clerk.js"
+    },
+    "./adapters/supabase": {
+      "types": "./dist/adapters/supabase.d.ts",
+      "import": "./dist/adapters/supabase.js"
+    },
+    "./adapters/authjs": {
+      "types": "./dist/adapters/authjs.d.ts",
+      "import": "./dist/adapters/authjs.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "next": ">=14"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true },
+    "next": { "optional": true }
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/node": "^22.0.0",
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.7.0"
+  },
+  "keywords": [
+    "rbac",
+    "permissions",
+    "authorization",
+    "nextjs",
+    "react",
+    "access-control",
+    "roles",
+    "gate"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gatehouse-rbac/gatehouse"
+  }
+}
