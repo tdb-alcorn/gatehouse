@@ -1,6 +1,6 @@
 {
   "name": "gatehouse",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Drop-in RBAC for Next.js. 5 lines to working permissions.",
   "type": "module",
   "exports": {
@@ -44,8 +44,12 @@
     "next": ">=14"
   },
   "peerDependenciesMeta": {
-    "react": { "optional": true },
-    "next": { "optional": true }
+    "react": {
+      "optional": true
+    },
+    "next": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
@@ -66,8 +70,12 @@
     "gate"
   ],
   "license": "MIT",
+  "homepage": "https://github.com/tdb-alcorn/gatehouse#readme",
+  "bugs": {
+    "url": "https://github.com/tdb-alcorn/gatehouse/issues"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/gatehouse-rbac/gatehouse"
+    "url": "https://github.com/tdb-alcorn/gatehouse"
   }
 }
