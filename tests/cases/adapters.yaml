@@ -1,0 +1,151 @@
+# Tests for auth provider adapters: Clerk, Supabase, Auth.js
+
+suite: Auth Adapters
+
+# --- Clerk Adapter ---
+
+clerk:
+  - name: returns subject with role from publicMetadata
+    user:
+      publicMetadata: { role: "admin" }
+    expected: { role: "admin" }
+
+  - name: returns null when no user
+    user: null
+    expected: null
+
+  - name: falls back to default role when no metadata role
+    user:
+      publicMetadata: {}
+    expected: { role: "viewer" }
+
+  - name: uses custom roleKey
+    options: { roleKey: "appRole" }
+    user:
+      publicMetadata: { appRole: "manager" }
+    expected: { role: "manager" }
+
+  - name: uses custom defaultRole
+    options: { defaultRole: "guest" }
+    user:
+      publicMetadata: {}
+    expected: { role: "guest" }
+
+  - name: custom roleKey with custom default
+    options: { roleKey: "tier", defaultRole: "free" }
+    user:
+      publicMetadata: { other: "data" }
+    expected: { role: "free" }
+
+  - name: null publicMetadata falls back to default
+    user:
+      publicMetadata: null
+    expected: { role: "viewer" }
+
+# --- Auth.js Adapter ---
+
+authjs:
+  - name: returns subject with role from session
+    session:
+      user: { role: "admin" }
+    expected: { role: "admin" }
+
+  - name: returns null when no session
+    session: null
+    expected: null
+
+  - name: returns null when session has no user
+    session: {}
+    expected: null
+
+  - name: falls back to default role when no user.role
+    session:
+      user: {}
+    expected: { role: "viewer" }
+
+  - name: uses custom defaultRole
+    options: { defaultRole: "guest" }
+    session:
+      user: {}
+    expected: { role: "guest" }
+
+  - name: uses role when present even with custom default
+    options: { defaultRole: "guest" }
+    session:
+      user: { role: "owner" }
+    expected: { role: "owner" }
+
+# --- Supabase Adapter ---
+
+supabase:
+  - name: reads role from app_metadata (default)
+    user:
+      id: "user-1"
+      app_metadata: { role: "admin" }
+      user_metadata: {}
+    expected: { role: "admin" }
+
+  - name: returns null when no user
+    user: null
+    expected: null
+
+  - name: falls back to default when no role in app_metadata
+    user:
+      id: "user-1"
+      app_metadata: {}
+      user_metadata: {}
+    expected: { role: "viewer" }
+
+  - name: reads role from user_metadata
+    options: { source: "user_metadata" }
+    user:
+      id: "user-1"
+      app_metadata: {}
+      user_metadata: { role: "editor" }
+    expected: { role: "editor" }
+
+  - name: reads role from custom table
+    options:
+      source: { table: "profiles", column: "app_role" }
+    user:
+      id: "user-1"
+      app_metadata: {}
+      user_metadata: {}
+    tableData: { app_role: "admin" }
+    expected: { role: "admin" }
+
+  - name: custom table with default column name
+    options:
+      source: { table: "profiles" }
+    user:
+      id: "user-1"
+      app_metadata: {}
+      user_metadata: {}
+    tableData: { role: "member" }
+    expected: { role: "member" }
+
+  - name: custom table returns null data falls back to default
+    options:
+      source: { table: "profiles" }
+    user:
+      id: "user-1"
+      app_metadata: {}
+      user_metadata: {}
+    tableData: null
+    expected: { role: "viewer" }
+
+  - name: uses custom roleKey in app_metadata
+    options: { roleKey: "access_level" }
+    user:
+      id: "user-1"
+      app_metadata: { access_level: "superadmin" }
+      user_metadata: {}
+    expected: { role: "superadmin" }
+
+  - name: uses custom defaultRole
+    options: { defaultRole: "guest" }
+    user:
+      id: "user-1"
+      app_metadata: {}
+      user_metadata: {}
+    expected: { role: "guest" }

@@ -1,0 +1,145 @@
+# Tests for createServerGate() - Next.js server-side authorization
+# Covers: gate(), gate(permission), gate.all(), gate.any(), gate.role(), gate.check()
+
+suite: Server Gate
+
+roles:
+  owner: ["*"]
+  admin: ["project:*", "member:invite"]
+  viewer: ["project:read"]
+
+# --- gate() - authentication only ---
+
+gateAuth:
+  - name: authenticated user passes
+    subject: { role: "viewer" }
+    expected: { role: "viewer" }
+
+  - name: unauthenticated user throws 401
+    subject: null
+    throws: { message: "Unauthorized", status: 401 }
+
+# --- gate(permission) - single permission ---
+
+gatePermission:
+  - name: user with permission passes
+    subject: { role: "admin" }
+    permission: "project:create"
+    expected: { role: "admin" }
+
+  - name: user without permission throws 403
+    subject: { role: "viewer" }
+    permission: "project:create"
+    throws: { message: "Forbidden", status: 403 }
+
+  - name: unauthenticated throws 401 before checking permission
+    subject: null
+    permission: "project:create"
+    throws: { message: "Unauthorized", status: 401 }
+
+  - name: owner passes any permission
+    subject: { role: "owner" }
+    permission: "billing:admin"
+    expected: { role: "owner" }
+
+  - name: subject with extra permissions
+    subject: { role: "viewer", permissions: ["member:invite"] }
+    permission: "member:invite"
+    expected: { role: "viewer", permissions: ["member:invite"] }
+
+# --- gate.all(permissions) ---
+
+gateAll:
+  - name: user with all permissions passes
+    subject: { role: "admin" }
+    permissions: ["project:read", "member:invite"]
+    expected: { role: "admin" }
+
+  - name: user missing one permission throws 403
+    subject: { role: "admin" }
+    permissions: ["project:read", "billing:manage"]
+    throws: { message: "Forbidden", status: 403 }
+
+  - name: unauthenticated throws 401
+    subject: null
+    permissions: ["project:read"]
+    throws: { message: "Unauthorized", status: 401 }
+
+  - name: empty permissions list passes for authenticated user
+    subject: { role: "viewer" }
+    permissions: []
+    expected: { role: "viewer" }
+
+# --- gate.any(permissions) ---
+
+gateAny:
+  - name: user with one matching permission passes
+    subject: { role: "viewer" }
+    permissions: ["project:read", "project:create"]
+    expected: { role: "viewer" }
+
+  - name: user with no matching permissions throws 403
+    subject: { role: "viewer" }
+    permissions: ["member:invite", "billing:manage"]
+    throws: { message: "Forbidden", status: 403 }
+
+  - name: unauthenticated throws 401
+    subject: null
+    permissions: ["project:read"]
+    throws: { message: "Unauthorized", status: 401 }
+
+  - name: empty permissions list throws 403
+    subject: { role: "viewer" }
+    permissions: []
+    throws: { message: "Forbidden", status: 403 }
+
+# --- gate.role(role) ---
+
+gateRole:
+  - name: higher role passes
+    subject: { role: "owner" }
+    requiredRole: "admin"
+    expected: { role: "owner" }
+
+  - name: same role passes
+    subject: { role: "admin" }
+    requiredRole: "admin"
+    expected: { role: "admin" }
+
+  - name: lower role throws 403
+    subject: { role: "viewer" }
+    requiredRole: "admin"
+    throws: { message: "Forbidden", status: 403 }
+
+  - name: unauthenticated throws 401
+    subject: null
+    requiredRole: "admin"
+    throws: { message: "Unauthorized", status: 401 }
+
+# --- gate.check() - soft checks ---
+
+gateCheck:
+  - name: authenticated without permission arg returns subject
+    subject: { role: "viewer" }
+    permission: null
+    expected: { role: "viewer" }
+
+  - name: user with permission returns subject
+    subject: { role: "admin" }
+    permission: "project:create"
+    expected: { role: "admin" }
+
+  - name: user without permission returns null
+    subject: { role: "viewer" }
+    permission: "project:create"
+    expected: null
+
+  - name: unauthenticated returns null
+    subject: null
+    permission: null
+    expected: null
+
+  - name: unauthenticated with permission returns null
+    subject: null
+    permission: "project:read"
+    expected: null

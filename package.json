@@ -37,11 +37,13 @@
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
-    "react": ">=18",
-    "next": ">=14"
+    "next": ">=14",
+    "react": ">=18"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -52,12 +54,18 @@
     }
   },
   "devDependencies": {
-    "@types/react": "^19.0.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "js-yaml": "^4.1.1",
+    "jsdom": "^29.0.1",
     "next": "^15.0.0",
     "react": "^19.0.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.2"
   },
   "keywords": [
     "rbac",

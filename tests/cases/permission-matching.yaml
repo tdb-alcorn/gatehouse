@@ -1,0 +1,107 @@
+# Tests for matchesPermission() and hasPermission()
+# Core pattern matching: exact, wildcard, prefix wildcard
+
+suite: Permission Matching
+
+# --- matchesPermission ---
+
+matchesPermission:
+  - name: exact match
+    args: ["project:read", "project:read"]
+    expected: true
+
+  - name: exact mismatch
+    args: ["project:read", "project:write"]
+    expected: false
+
+  - name: universal wildcard matches anything
+    args: ["*", "project:read"]
+    expected: true
+
+  - name: universal wildcard matches deeply nested
+    args: ["*", "a:b:c:d"]
+    expected: true
+
+  - name: universal wildcard matches single word
+    args: ["*", "anything"]
+    expected: true
+
+  - name: prefix wildcard matches sub-permission
+    args: ["project:*", "project:read"]
+    expected: true
+
+  - name: prefix wildcard matches different sub-permission
+    args: ["project:*", "project:delete"]
+    expected: true
+
+  - name: prefix wildcard does not match without colon
+    args: ["project:*", "project"]
+    expected: false
+
+  - name: prefix wildcard does not match different prefix
+    args: ["project:*", "task:read"]
+    expected: false
+
+  - name: prefix wildcard requires exact prefix before colon
+    args: ["proj:*", "project:read"]
+    expected: false
+
+  - name: prefix wildcard matches nested sub-permissions
+    args: ["project:*", "project:settings:advanced"]
+    expected: true
+
+  - name: non-wildcard pattern does not partially match
+    args: ["project:read", "project:readonly"]
+    expected: false
+
+  - name: empty permission does not match anything
+    args: ["project:read", ""]
+    expected: false
+
+  - name: pattern does not match empty string
+    args: ["", "project:read"]
+    expected: false
+
+  - name: empty matches empty
+    args: ["", ""]
+    expected: true
+
+  - name: wildcard star alone matches empty
+    args: ["*", ""]
+    expected: true
+
+  - name: colon-star alone matches anything with colon prefix
+    # ":*" has prefix "" so startsWith("") is always true
+    args: [":*", ":read"]
+    expected: true
+
+# --- hasPermission ---
+
+hasPermission:
+  - name: matches if any pattern matches
+    args: [["task:read", "project:read"], "project:read"]
+    expected: true
+
+  - name: no match in list
+    args: [["task:read", "task:write"], "project:read"]
+    expected: false
+
+  - name: empty pattern list never matches
+    args: [[], "project:read"]
+    expected: false
+
+  - name: wildcard in list grants everything
+    args: [["task:read", "*"], "anything"]
+    expected: true
+
+  - name: prefix wildcard in list
+    args: [["task:read", "project:*"], "project:delete"]
+    expected: true
+
+  - name: single-element list exact match
+    args: [["project:read"], "project:read"]
+    expected: true
+
+  - name: single-element list mismatch
+    args: [["project:read"], "project:write"]
+    expected: false

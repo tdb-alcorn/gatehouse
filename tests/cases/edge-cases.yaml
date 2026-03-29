@@ -1,0 +1,161 @@
+# Edge cases and unusual configurations
+
+suite: Edge Cases
+
+# --- Single role configuration ---
+
+singleRole:
+  roles:
+    admin: ["*"]
+  tests:
+    - name: single role can do everything
+      fn: can
+      role: admin
+      permission: anything
+      expected: true
+
+    - name: single role is at least itself
+      fn: isAtLeast
+      roleA: admin
+      roleB: admin
+      expected: true
+
+    - name: roles list has one entry
+      fn: rolesList
+      expected: ["admin"]
+
+# --- Many roles configuration ---
+
+manyRoles:
+  roles:
+    superadmin: ["*"]
+    admin: ["manage:*"]
+    editor: ["content:*"]
+    author: ["content:create", "content:read"]
+    commenter: ["comment:*", "content:read"]
+    viewer: ["content:read", "comment:read"]
+    guest: ["content:read"]
+  tests:
+    - name: hierarchy with many roles
+      fn: isAtLeast
+      roleA: editor
+      roleB: guest
+      expected: true
+
+    - name: non-adjacent roles in hierarchy
+      fn: isAtLeast
+      roleA: admin
+      roleB: viewer
+      expected: true
+
+    - name: lowest role is not at least second lowest
+      fn: isAtLeast
+      roleA: guest
+      roleB: viewer
+      expected: false
+
+    - name: middle role checks correctly
+      fn: isAtLeast
+      roleA: commenter
+      roleB: viewer
+      expected: true
+
+# --- Roles with no permissions ---
+
+emptyPermissions:
+  roles:
+    admin: ["*"]
+    nobody: []
+  tests:
+    - name: role with empty permissions cannot do anything
+      fn: can
+      role: nobody
+      permission: project:read
+      expected: false
+
+    - name: role with empty permissions returns empty array
+      fn: permissionsFor
+      role: nobody
+      expected: []
+
+    - name: empty role is still in hierarchy
+      fn: isAtLeast
+      role: admin
+      roleA: admin
+      roleB: nobody
+      expected: true
+
+# --- Deeply nested permission namespaces ---
+
+deepNamespaces:
+  roles:
+    admin: ["org:*"]
+    manager: ["org:team:*"]
+    dev: ["org:team:project:read", "org:team:project:write"]
+  tests:
+    - name: deep wildcard matches deep permission
+      fn: can
+      role: admin
+      permission: "org:team:project:settings:advanced"
+      expected: true
+
+    - name: mid-level wildcard matches deeper
+      fn: can
+      role: manager
+      permission: "org:team:project:read"
+      expected: true
+
+    - name: mid-level wildcard does not match sibling
+      fn: can
+      role: manager
+      permission: "org:billing:read"
+      expected: false
+
+    - name: exact deep permission matches
+      fn: can
+      role: dev
+      permission: "org:team:project:read"
+      expected: true
+
+    - name: exact deep permission does not match deeper
+      fn: can
+      role: dev
+      permission: "org:team:project:read:details"
+      expected: false
+
+# --- Config access ---
+
+configAccess:
+  roles:
+    admin: ["*"]
+    viewer: ["read"]
+  tests:
+    - name: config returns raw role definitions
+      fn: config
+      expected:
+        admin: ["*"]
+        viewer: ["read"]
+
+# --- Special characters in permission strings ---
+
+specialChars:
+  roles:
+    admin: ["resource/read", "resource/write", "ns.action"]
+  tests:
+    - name: slash-separated permission exact match
+      fn: can
+      role: admin
+      permission: "resource/read"
+      expected: true
+
+    - name: slash-separated permission mismatch
+      fn: can
+      role: admin
+      permission: "resource/delete"
+      expected: false
+
+    - name: dot-separated permission exact match
+      fn: can
+      role: admin
+      permission: "ns.action"
+      expected: true

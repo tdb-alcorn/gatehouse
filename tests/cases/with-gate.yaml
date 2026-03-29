@@ -1,0 +1,28 @@
+# Tests for withGate() - Next.js route handler error wrapper
+
+suite: withGate
+
+cases:
+  - name: passes through successful response
+    handler: success
+    expectedStatus: 200
+    expectedBody: { ok: true }
+
+  - name: catches GatehouseError 401 and returns JSON
+    handler: throw401
+    expectedStatus: 401
+    expectedBody: { error: "Unauthorized" }
+
+  - name: catches GatehouseError 403 and returns JSON
+    handler: throw403
+    expectedStatus: 403
+    expectedBody: { error: "Forbidden" }
+
+  - name: re-throws non-GatehouseError
+    handler: throwGeneric
+    throws: "Something else"
+
+  - name: passes request object to handler
+    handler: echoMethod
+    expectedStatus: 200
+    expectedBody: { method: "POST" }

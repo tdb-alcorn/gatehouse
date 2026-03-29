@@ -1,0 +1,25 @@
+# Tests for GatehouseError class
+
+suite: GatehouseError
+
+cases:
+  - name: stores message and status 401
+    message: "Unauthorized"
+    status: 401
+    expectedName: "GatehouseError"
+
+  - name: stores message and status 403
+    message: "Forbidden"
+    status: 403
+    expectedName: "GatehouseError"
+
+  - name: is instance of Error
+    message: "Test"
+    status: 500
+    expectedName: "GatehouseError"
+    instanceOfError: true
+
+  - name: has correct name property
+    message: "Test"
+    status: 400
+    expectedName: "GatehouseError"

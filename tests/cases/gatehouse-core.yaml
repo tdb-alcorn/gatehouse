@@ -1,0 +1,260 @@
+# Tests for createGatehouse() - the core RBAC engine
+# Covers: can, canAll, canAny, isAtLeast, permissionsFor, roles
+
+suite: Gatehouse Core
+
+# Shared role definitions used across tests
+roles:
+  owner: ["*"]
+  admin: ["project:*", "member:invite", "member:remove"]
+  member: ["project:read", "project:create", "task:*"]
+  viewer: ["project:read", "task:read"]
+
+# --- can (string role) ---
+
+can:
+  - name: owner can do anything via wildcard
+    role: owner
+    permission: project:delete
+    expected: true
+
+  - name: admin can do project actions via prefix wildcard
+    role: admin
+    permission: project:create
+    expected: true
+
+  - name: admin can do exact match permission
+    role: admin
+    permission: member:invite
+    expected: true
+
+  - name: admin cannot do ungranted permission
+    role: admin
+    permission: billing:read
+    expected: false
+
+  - name: member can read projects (exact match)
+    role: member
+    permission: project:read
+    expected: true
+
+  - name: member can do task actions via wildcard
+    role: member
+    permission: task:delete
+    expected: true
+
+  - name: member cannot invite members
+    role: member
+    permission: member:invite
+    expected: false
+
+  - name: viewer can read projects
+    role: viewer
+    permission: project:read
+    expected: true
+
+  - name: viewer cannot create projects
+    role: viewer
+    permission: project:create
+    expected: false
+
+  - name: viewer can read tasks
+    role: viewer
+    permission: task:read
+    expected: true
+
+  - name: viewer cannot write tasks
+    role: viewer
+    permission: task:write
+    expected: false
+
+# --- can (subject with extra permissions) ---
+
+canSubject:
+  - name: subject extra permissions grant additional access
+    subject: { role: "viewer", permissions: ["project:create"] }
+    permission: project:create
+    expected: true
+
+  - name: subject still has role permissions
+    subject: { role: "viewer", permissions: ["project:create"] }
+    permission: project:read
+    expected: true
+
+  - name: subject extra permissions do not grant unspecified
+    subject: { role: "viewer", permissions: ["project:create"] }
+    permission: member:invite
+    expected: false
+
+  - name: subject with empty extra permissions works like string role
+    subject: { role: "viewer", permissions: [] }
+    permission: project:read
+    expected: true
+
+  - name: subject with no permissions key works like string role
+    subject: { role: "viewer" }
+    permission: project:read
+    expected: true
+
+  - name: subject with wildcard extra permission grants everything
+    subject: { role: "viewer", permissions: ["*"] }
+    permission: billing:admin
+    expected: true
+
+# --- canAll ---
+
+canAll:
+  - name: owner passes all permission checks
+    role: owner
+    permissions: ["project:read", "member:invite", "billing:manage"]
+    expected: true
+
+  - name: admin passes when all are covered
+    role: admin
+    permissions: ["project:read", "project:create", "member:invite"]
+    expected: true
+
+  - name: admin fails when one is not covered
+    role: admin
+    permissions: ["project:read", "billing:manage"]
+    expected: false
+
+  - name: viewer fails when any is missing
+    role: viewer
+    permissions: ["project:read", "project:create"]
+    expected: false
+
+  - name: empty permissions list returns true
+    role: viewer
+    permissions: []
+    expected: true
+
+  - name: single permission that matches
+    role: viewer
+    permissions: ["project:read"]
+    expected: true
+
+  - name: single permission that does not match
+    role: viewer
+    permissions: ["project:create"]
+    expected: false
+
+# --- canAny ---
+
+canAny:
+  - name: matches when first permission matches
+    role: viewer
+    permissions: ["project:read", "project:create"]
+    expected: true
+
+  - name: matches when second permission matches
+    role: viewer
+    permissions: ["project:create", "task:read"]
+    expected: true
+
+  - name: fails when none match
+    role: viewer
+    permissions: ["member:invite", "billing:manage"]
+    expected: false
+
+  - name: owner matches any list
+    role: owner
+    permissions: ["anything:here", "something:else"]
+    expected: true
+
+  - name: empty permissions list returns false
+    role: viewer
+    permissions: []
+    expected: false
+
+  - name: single matching permission
+    role: member
+    permissions: ["task:delete"]
+    expected: true
+
+# --- isAtLeast ---
+
+isAtLeast:
+  - name: owner is at least owner
+    roleA: owner
+    roleB: owner
+    expected: true
+
+  - name: owner is at least viewer
+    roleA: owner
+    roleB: viewer
+    expected: true
+
+  - name: owner is at least admin
+    roleA: owner
+    roleB: admin
+    expected: true
+
+  - name: admin is at least admin
+    roleA: admin
+    roleB: admin
+    expected: true
+
+  - name: admin is at least member
+    roleA: admin
+    roleB: member
+    expected: true
+
+  - name: admin is not at least owner
+    roleA: admin
+    roleB: owner
+    expected: false
+
+  - name: viewer is not at least member
+    roleA: viewer
+    roleB: member
+    expected: false
+
+  - name: viewer is at least viewer
+    roleA: viewer
+    roleB: viewer
+    expected: true
+
+  - name: member is not at least admin
+    roleA: member
+    roleB: admin
+    expected: false
+
+  - name: unknown role is not at least anything
+    roleA: unknown
+    roleB: viewer
+    expected: false
+
+  - name: known role is not at least unknown role
+    roleA: admin
+    roleB: unknown
+    expected: false
+
+  - name: both unknown returns false
+    roleA: unknown
+    roleB: also_unknown
+    expected: false
+
+# --- permissionsFor ---
+
+permissionsFor:
+  - name: owner gets wildcard
+    role: owner
+    expected: ["*"]
+
+  - name: admin gets all admin permissions
+    role: admin
+    expected: ["project:*", "member:invite", "member:remove"]
+
+  - name: viewer gets read permissions
+    role: viewer
+    expected: ["project:read", "task:read"]
+
+  - name: unknown role gets empty array
+    role: nonexistent
+    expected: []
+
+# --- roles list ---
+
+rolesList:
+  expected: ["owner", "admin", "member", "viewer"]
