@@ -68,6 +68,6 @@ function patternToRegex(pattern: string): RegExp {
   const escaped = pattern
     .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
     .replace(/:path\\\*/g, ".*")    // :path* → .*
-    .replace(/:\\w+/g, "[^/]+");     // :id → [^/]+
+    .replace(/:\w+/g, "[^/]+");     // :id → [^/]+
   return new RegExp(`^${escaped}$`);
 }

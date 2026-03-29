@@ -1,0 +1,171 @@
+# Tests for createMiddleware() - Next.js edge middleware
+
+suite: Middleware
+
+config:
+  protected:
+    - "/dashboard/:path*"
+    - "/api/projects/:path*"
+    - "/settings"
+    - "/api/admin/:path*"
+    - "/users/:id/edit"
+  loginUrl: "/login"
+
+# --- Route protection ---
+
+routeProtection:
+  - name: unprotected route passes through
+    path: /about
+    authenticated: false
+    expectedAction: next
+
+  - name: root path passes through
+    path: /
+    authenticated: false
+    expectedAction: next
+
+  - name: login page passes through
+    path: /login
+    authenticated: false
+    expectedAction: next
+
+  - name: protected page with auth passes through
+    path: /dashboard/home
+    authenticated: true
+    expectedAction: next
+
+  - name: protected nested page with auth passes through
+    path: /dashboard/projects/123
+    authenticated: true
+    expectedAction: next
+
+  - name: protected exact page with auth passes through
+    path: /settings
+    authenticated: true
+    expectedAction: next
+
+# --- Unauthenticated page redirects ---
+
+pageRedirects:
+  - name: protected page without auth redirects to login
+    path: /dashboard/home
+    authenticated: false
+    expectedAction: redirect
+    redirectUrl: /login
+    redirectFrom: /dashboard/home
+
+  - name: protected nested page without auth redirects
+    path: /dashboard/projects/123
+    authenticated: false
+    expectedAction: redirect
+    redirectUrl: /login
+    redirectFrom: /dashboard/projects/123
+
+  - name: protected exact path without auth redirects
+    path: /settings
+    authenticated: false
+    expectedAction: redirect
+    redirectUrl: /login
+    redirectFrom: /settings
+
+  - name: protected dynamic segment path redirects
+    path: /users/42/edit
+    authenticated: false
+    expectedAction: redirect
+    redirectUrl: /login
+    redirectFrom: /users/42/edit
+
+# --- Unauthenticated API returns 401 ---
+
+apiUnauth:
+  - name: protected API without auth returns 401
+    path: /api/projects/123
+    authenticated: false
+    expectedAction: json401
+
+  - name: protected nested API without auth returns 401
+    path: /api/projects/123/tasks
+    authenticated: false
+    expectedAction: json401
+
+  - name: protected admin API without auth returns 401
+    path: /api/admin/users
+    authenticated: false
+    expectedAction: json401
+
+  - name: unprotected API passes through
+    path: /api/auth/login
+    authenticated: false
+    expectedAction: next
+
+# --- Pattern matching edge cases ---
+
+patternEdgeCases:
+  - name: path* matches single trailing segment
+    path: /dashboard/x
+    authenticated: false
+    expectedAction: redirect
+    redirectUrl: /login
+    redirectFrom: /dashboard/x
+
+  - name: path* matches deep nesting
+    path: /dashboard/a/b/c/d/e
+    authenticated: false
+    expectedAction: redirect
+
+  - name: similar but non-matching path passes through
+    path: /dashboards
+    authenticated: false
+    expectedAction: next
+
+  - name: id segment matches any single segment
+    path: /users/abc-123/edit
+    authenticated: false
+    expectedAction: redirect
+    redirectUrl: /login
+    redirectFrom: /users/abc-123/edit
+
+  - name: id segment does not match extra segments
+    path: /users/42/edit/confirm
+    authenticated: false
+    expectedAction: next
+
+# --- Custom login URL ---
+
+customLoginUrl:
+  loginUrl: /auth/signin
+  protected: ["/dashboard/:path*"]
+  test:
+    path: /dashboard/home
+    authenticated: false
+    expectedAction: redirect
+    redirectUrl: /auth/signin
+    redirectFrom: /dashboard/home
+
+# --- Default login URL ---
+
+defaultLoginUrl:
+  protected: ["/dashboard/:path*"]
+  test:
+    path: /dashboard/home
+    authenticated: false
+    expectedAction: redirect
+    redirectUrl: /login
+    redirectFrom: /dashboard/home
+
+# --- Async isAuthenticated ---
+
+asyncAuth:
+  - name: async isAuthenticated that resolves true
+    path: /dashboard/home
+    authenticated: true
+    async: true
+    expectedAction: next
+
+  - name: async isAuthenticated that resolves false
+    path: /dashboard/home
+    authenticated: false
+    async: true
+    expectedAction: redirect
+    redirectUrl: /login
+    redirectFrom: /dashboard/home

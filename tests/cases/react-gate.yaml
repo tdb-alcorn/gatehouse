@@ -1,0 +1,161 @@
+# Tests for <Gate> component and React hooks
+
+suite: React Gate Component
+
+roles:
+  owner: ["*"]
+  admin: ["project:*", "member:invite"]
+  member: ["project:read", "task:*"]
+  viewer: ["project:read"]
+
+# --- Gate with allow (single permission) ---
+
+gateAllow:
+  - name: renders children when permission granted
+    subject: { role: "admin" }
+    props: { allow: "project:create" }
+    expectedContent: children
+
+  - name: renders fallback when permission denied
+    subject: { role: "viewer" }
+    props: { allow: "project:create" }
+    expectedContent: fallback
+
+  - name: renders fallback when unauthenticated
+    subject: null
+    props: { allow: "project:read" }
+    expectedContent: fallback
+
+  - name: renders nothing when denied and no fallback
+    subject: { role: "viewer" }
+    props: { allow: "project:create" }
+    expectedContent: empty
+
+# --- Gate with allOf ---
+
+gateAllOf:
+  - name: renders children when all permissions granted
+    subject: { role: "admin" }
+    props: { allOf: ["project:read", "member:invite"] }
+    expectedContent: children
+
+  - name: renders fallback when one permission missing
+    subject: { role: "admin" }
+    props: { allOf: ["project:read", "billing:manage"] }
+    expectedContent: fallback
+
+  - name: renders children for empty allOf array
+    subject: { role: "viewer" }
+    props: { allOf: [] }
+    expectedContent: children
+
+# --- Gate with anyOf ---
+
+gateAnyOf:
+  - name: renders children when one permission matches
+    subject: { role: "viewer" }
+    props: { anyOf: ["project:read", "project:create"] }
+    expectedContent: children
+
+  - name: renders fallback when no permissions match
+    subject: { role: "viewer" }
+    props: { anyOf: ["member:invite", "billing:manage"] }
+    expectedContent: fallback
+
+  - name: renders fallback for empty anyOf array
+    subject: { role: "viewer" }
+    props: { anyOf: [] }
+    expectedContent: fallback
+
+# --- Gate with role ---
+
+gateRole:
+  - name: renders children when role meets minimum
+    subject: { role: "admin" }
+    props: { role: "admin" }
+    expectedContent: children
+
+  - name: renders children when role exceeds minimum
+    subject: { role: "owner" }
+    props: { role: "admin" }
+    expectedContent: children
+
+  - name: renders fallback when role below minimum
+    subject: { role: "viewer" }
+    props: { role: "admin" }
+    expectedContent: fallback
+
+# --- Gate with combined checks ---
+
+gateCombined:
+  - name: role + allow both pass
+    subject: { role: "admin" }
+    props: { role: "member", allow: "project:create" }
+    expectedContent: children
+
+  - name: role passes but allow fails
+    subject: { role: "admin" }
+    props: { role: "member", allow: "billing:manage" }
+    expectedContent: fallback
+
+  - name: allow passes but role fails
+    subject: { role: "viewer" }
+    props: { role: "admin", allow: "project:read" }
+    expectedContent: fallback
+
+# --- Gate loading state ---
+
+gateLoading:
+  - name: renders loading node during loading
+    loading: true
+    props: { allow: "project:read" }
+    expectedContent: loading
+
+  - name: renders nothing during loading when no loading prop
+    loading: true
+    props: { allow: "project:read" }
+    expectedContent: empty
+
+# --- useGate hook ---
+
+useGate:
+  - name: returns true when permission granted
+    subject: { role: "admin" }
+    permission: "project:create"
+    expected: true
+
+  - name: returns false when permission denied
+    subject: { role: "viewer" }
+    permission: "project:create"
+    expected: false
+
+  - name: returns false when unauthenticated
+    subject: null
+    permission: "project:read"
+    expected: false
+
+# --- useRole hook ---
+
+useRole:
+  - name: returns current role
+    subject: { role: "admin" }
+    expected: "admin"
+
+  - name: returns null when unauthenticated
+    subject: null
+    expected: null
+
+# --- usePermissions hook ---
+
+usePermissions:
+  - name: returns permissions for admin
+    subject: { role: "admin" }
+    expected: ["project:*", "member:invite"]
+
+  - name: returns permissions for viewer
+    subject: { role: "viewer" }
+    expected: ["project:read"]
+
+  - name: returns empty array when unauthenticated
+    subject: null
+    expected: []
