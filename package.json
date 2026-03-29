@@ -1,6 +1,6 @@
 {
   "name": "gatehouse",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Drop-in RBAC for Next.js. 5 lines to working permissions.",
   "type": "module",
   "exports": {
